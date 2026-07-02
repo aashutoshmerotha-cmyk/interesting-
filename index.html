@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Interesting</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0095F6" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Grand+Hotel&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Firebase (real shared backend) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  // ⚠️ PASTE YOUR OWN FIREBASE CONFIG HERE (see SETUP.md for how to get it)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBqFZgqhinm2smM0VFOAn9REJ0z61GD94s",
+    authDomain: "interesting-84fa7.firebaseapp.com",
+    projectId: "interesting-84fa7",
+    storageBucket: "interesting-84fa7.firebasestorage.app",
+    messagingSenderId: "498101977169",
+    appId: "1:498101977169:web:7e523cbc6fbc07911f3870",
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+
+<style>
+  :root{
+    --ink:#262626;
+    --muted:#8e8e8e;
+    --border:#dbdbdb;
+    --blue:#0095F6;
+    --bg:#fafafa;
+    --red:#ed4956;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:#000;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+  }
+  .phone{
+    width:100%;
+    max-width:430px;
+    min-height:100vh;
+    background:var(--bg);
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 16px;
+  }
+  .logo{
+    font-family:'Grand Hotel',cursive;
+    font-size:30px;
+    font-weight:400;
+    color:#000;
+    letter-spacing:0.5px;
+  }
+  .topbar-icons{ display:flex; gap:18px; align-items:center; }
+  .icon-btn{ background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center; transition:transform .12s ease; }
+  .icon-btn:active{ transform:scale(0.85); }
+  .icon-btn svg{ width:24px; height:24px; }
+
+  /* ---------- Stories ---------- */
+  .stories{
+    display:flex; gap:14px; padding:12px 16px;
+    overflow-x:auto; background:#fff; border-bottom:1px solid var(--border);
+    scrollbar-width:none;
+  }
+  .stories::-webkit-scrollbar{display:none;}
+  .story{
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    flex:0 0 auto; width:64px; cursor:pointer; transition:transform .12s ease;
+  }
+  .story:active{ transform:scale(0.94); }
+  .story-ring{
+    width:58px;height:58px;border-radius:50%;
+    background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+    display:flex;align-items:center;justify-content:center;
+    padding:2.5px;
+    transition:transform .15s ease;
+  }
+  .story-ring.seen{ background:#dbdbdb; }
+  .story-ring img{ width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #fff; }
+  .story-name{ font-size:11.5px; color:var(--ink); max-width:64px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; }
+  .story.you .story-ring{ background:#dbdbdb; position:relative; }
+  .plus-badge{
+    position:absolute; bottom:-2px; right:-2px; width:18px;height:18px;border-radius:50%;
+    background:var(--blue); color:#fff; font-size:14px; display:flex; align-items:center; justify-content:center;
+    border:2px solid #fff; font-weight:700; box-shadow:0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  /* ---------- Feed ---------- */
+  .feed{ flex:1; padding-bottom:60px; animation:fadeIn .2s ease; }
+  @keyframes fadeIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:translateY(0); } }
+  .post{ background:#fff; margin-bottom:8px; border-bottom:1px solid var(--border); box-shadow:0 1px 2px rgba(0,0,0,0.03); }
+  .post-header{ display:flex; align-items:center; padding:10px 12px; gap:10px; }
+  .post-header img.avatar{ width:32px;height:32px;border-radius:50%;object-fit:cover; box-shadow:0 0 0 1.5px #fff, 0 0 0 2.5px #efefef; }
+  .post-header .uname{ font-weight:600; font-size:14px; }
+  .post-header .loc{ font-size:11px; color:var(--muted); }
+  .post-header .spacer{ flex:1; }
+  .post-img{ width:100%; display:block; aspect-ratio:1/1; object-fit:cover; -webkit-user-select:none; user-select:none; background:#f4f4f4; }
+  .carousel-wrap{ width:100%; }
+  .carousel-track{
+    display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .carousel-track::-webkit-scrollbar{ display:none; }
+  .carousel-img{ flex:0 0 100%; scroll-snap-align:start; }
+  .carousel-counter{
+    position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.55); color:#fff;
+    font-size:11px; font-weight:600; padding:2px 8px; border-radius:10px;
+  }
+  .carousel-dots{
+    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+    display:flex; gap:5px;
+  }
+  .carousel-dots .dot{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.6); }
+  .carousel-dots .dot.active{ background:#fff; }
+  .post-actions{ display:flex; align-items:center; padding:8px 12px 0; gap:14px; }
+  .post-actions .right{ margin-left:auto; }
+  .icon-btn svg path, .icon-btn svg circle, .icon-btn svg polyline, .icon-btn svg line { transition: all .15s ease; }
+  .liked svg path{ fill:var(--red); stroke:var(--red); }
+  .liked{ animation:likePop .35s ease; }
+  @keyframes likePop{ 0%{ transform:scale(1); } 35%{ transform:scale(1.3); } 60%{ transform:scale(0.92); } 100%{ transform:scale(1); } }
+  .saved svg path{ fill:#000; stroke:#000; }
+  .likes-count{ font-weight:600; font-size:13.5px; padding:6px 12px 0; }
+  .caption{ padding:4px 12px 0; font-size:14px; line-height:1.35; }
+  .caption b{ font-weight:600; margin-right:4px; }
+  .view-comments{ padding:4px 12px 0; font-size:13px; color:var(--muted); cursor:pointer; }
+  .comment-row{ padding:2px 12px 0; font-size:13.5px; }
+  .comment-like-btn svg{ width:13px; height:13px; }
+  .timestamp{ padding:4px 12px 10px; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.2px; }
+  .add-comment{ display:flex; align-items:center; gap:8px; border-top:1px solid #efefef; padding:8px 12px; }
+  .add-comment input{
+    flex:1; border:none; outline:none; font-size:14px; font-family:inherit; background:transparent;
+  }
+  .add-comment button{ border:none;background:none;color:var(--blue);font-weight:600;font-size:13.5px;cursor:pointer; transition:transform .1s ease; }
+  .add-comment button:active{ transform:scale(0.9); }
+  .add-comment button:disabled{ color:#b2dffc; cursor:default; }
+  .add-comment button svg{ width:22px; height:22px; }
+  .add-comment button:disabled svg path{ stroke:#b2dffc; }
+
+  /* ---------- Bottom nav ---------- */
+  .bottomnav{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:430px;
+    background:#fff; border-top:1px solid var(--border);
+    box-shadow:0 -1px 4px rgba(0,0,0,0.04);
+    display:flex; justify-content:space-around; align-items:center;
+    padding:10px 0 12px; z-index:30;
+  }
+  .navbtn{ background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center; padding:0; transition:transform .12s ease; }
+  .navbtn:active{ transform:scale(0.82); }
+  .navbtn svg{ width:25px;height:25px; }
+  .navbtn.active svg path, .navbtn.active svg circle, .navbtn.active svg polygon{ fill:#000; }
+  .navbtn img.profile-pic{ width:25px;height:25px;border-radius:50%;object-fit:cover; }
+  .navbtn.active img.profile-pic{ border:2px solid #000; }
+
+  /* ---------- Profile ---------- */
+  .profile{ padding-bottom:60px; }
+  .profile-top{ display:flex; align-items:center; padding:20px 16px 10px; gap:24px; }
+  .profile-top img{ width:86px;height:86px;border-radius:50%;object-fit:cover; }
+  .stats{ display:flex; gap:24px; flex:1; }
+  .stat{ text-align:center; }
+  .stat b{ display:block; font-size:17px; }
+  .stat span{ font-size:13px; color:var(--muted); }
+  .profile-info{ padding:0 16px; }
+  .profile-info .name{ font-weight:600; font-size:14px; }
+  .profile-info .bio{ font-size:13.5px; margin-top:2px; white-space:pre-line; }
+  .profile-buttons{ display:flex; gap:8px; padding:14px 16px; }
+  .profile-buttons button{
+    flex:1; padding:7px 0; border-radius:8px; border:1px solid var(--border);
+    background:#efefef; font-weight:600; font-size:13.5px; cursor:pointer;
+  }
+  .tabs{ display:flex; border-top:1px solid var(--border); }
+  .tab{ flex:1; text-align:center; padding:12px 0; border-bottom:1px solid transparent; cursor:pointer; }
+  .tab.active{ border-bottom:1px solid #000; }
+  .tab svg{ width:22px;height:22px; }
+  .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:3px; }
+  .grid img{ width:100%; aspect-ratio:1/1; object-fit:cover; cursor:pointer; }
+
+  /* ---------- Create Modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:50;
+    display:flex; align-items:center; justify-content:center;
+    animation:overlayFade .18s ease;
+  }
+  @keyframes overlayFade{ from{ opacity:0; } to{ opacity:1; } }
+  .modal{
+    background:#fff; width:90%; max-width:380px; border-radius:14px; overflow:hidden;
+    animation:modalIn .22s cubic-bezier(.2,.8,.3,1);
+    box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  }
+  @keyframes modalIn{ from{ opacity:0; transform:scale(0.92) translateY(10px); } to{ opacity:1; transform:scale(1) translateY(0); } }
+  .modal-header{
+    display:flex; align-items:center; justify-content:space-between; padding:12px 14px;
+    border-bottom:1px solid var(--border); font-weight:600; font-size:15px;
+  }
+  .modal-header button{ background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink); transition:transform .1s; }
+  .modal-header button:active{ transform:scale(0.85); }
+  .modal-share{ color:var(--blue); font-weight:600; font-size:14px; background:none;border:none;cursor:pointer; transition:transform .1s; }
+  .modal-share:active{ transform:scale(0.92); }
+  .modal-share:disabled{ color:#b2dffc; }
+  .upload-area{
+    aspect-ratio:1/1; background:#fafafa; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px; color:var(--muted); cursor:pointer; overflow:hidden;
+    transition:background .15s;
+  }
+  .upload-area:active{ background:#f0f0f0; }
+  .upload-area img{ width:100%;height:100%;object-fit:cover; }
+  .modal-caption{ padding:12px 14px; }
+  .modal-caption textarea{
+    width:100%; border:none; outline:none; resize:none; font-family:inherit; font-size:14px; min-height:60px;
+  }
+  #fileInput{ position:absolute; width:1px; height:1px; opacity:0; overflow:hidden; pointer-events:none; }
+
+  .empty-feed-hint{ text-align:center; color:var(--muted); font-size:13px; padding:30px 20px; }
+
+  /* ---------- Auth screen ---------- */
+  .auth-screen{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:30px 28px; gap:14px; min-height:100vh;
+    animation:fadeIn .25s ease;
+  }
+  .auth-logo{ font-family:'Grand Hotel',cursive; font-size:44px; margin-bottom:18px; }
+  .auth-screen input{
+    width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:6px;
+    background:#fafafa; font-size:14px; outline:none; font-family:inherit;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .auth-screen input:focus{ border-color:#a8a8a8; box-shadow:0 0 0 3px rgba(0,149,246,0.08); }
+  .auth-btn{
+    width:100%; padding:10px 0; background:var(--blue); color:#fff; border:none; border-radius:8px;
+    font-weight:600; font-size:14px; cursor:pointer; transition:transform .1s, opacity .15s;
+  }
+  .auth-btn:active{ transform:scale(0.98); }
+  .auth-btn:disabled{ background:#b2dffc; cursor:default; }
+  .auth-switch{ font-size:13.5px; color:var(--muted); margin-top:10px; }
+  .auth-switch b{ color:var(--blue); cursor:pointer; }
+  .auth-error{ color:var(--red); font-size:13px; text-align:center; }
+  .auth-note{ font-size:11.5px; color:var(--muted); text-align:center; margin-top:24px; line-height:1.5; }
+  .loading-screen{ flex:1; display:flex; flex-direction:column; gap:14px; align-items:center; justify-content:center; min-height:100vh; color:var(--muted); font-size:14px; }
+  .spinner{
+    width:28px; height:28px; border-radius:50%;
+    border:3px solid #e0e0e0; border-top-color:var(--blue);
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce){ * { transition:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="phone" id="app"></div>
+
+<input type="file" id="fileInput" accept="image/*" />
+
+<script>
+/* ---------------- Icons ---------------- */
+const ICONS = {
+  heart: (filled) => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path d="M12 21s-7.5-4.6-10.1-9.3C0.2 8.6 1.6 5 5 4.2c2.2-.5 4 .6 5.2 2.3C11.4 4.8 13.2 3.7 15.4 4.2c3.4.8 4.8 4.4 3.1 7.5C19.5 16.4 12 21 12 21z" fill="${filled ? '#ed4956' : 'none'}" stroke="${filled ? '#ed4956' : '#262626'}"/></svg>`,
+  comment: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path d="M21 12c0 4.6-4 8.3-9 8.3-1.4 0-2.8-.3-4-.8L3 21l1.6-4.3C3.6 15.4 3 13.8 3 12c0-4.6 4-8.3 9-8.3s9 3.7 9 8.3z"/></svg>`,
+  share: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path d="M22 3 11 14M22 3l-7 19-4-9-9-4 20-6z"/></svg>`,
+  save: (filled) => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path d="M6 3h12v18l-6-4-6 4V3z" fill="${filled ? '#262626' : 'none'}"/></svg>`,
+  homeFilled: () => `<svg viewBox="0 0 24 24"><path d="M12 2 2 10v12h7v-7h6v7h7V10z"/></svg>`,
+  homeOutline: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path d="M3 11.5 12 4l9 7.5M5 10v10h5v-6h4v6h5V10"/></svg>`,
+  search: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>`,
+  plusSquare: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="4"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+  reels: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><rect x="2" y="3" width="20" height="18" rx="3"/><path d="M7 3l3 5M14 3l3 5"/></svg>`,
+  grid: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`,
+  bell: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path d="M12 21s-7.5-4.6-10.1-9.3C0.2 8.6 1.6 5 5 4.2c2.2-.5 4 .6 5.2 2.3C11.4 4.8 13.2 3.7 15.4 4.2c3.4.8 4.8 4.4 3.1 7.5C19.5 16.4 12 21 12 21z"/></svg>`,
+  messenger: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="1.6"><path d="M21 11.5a8.4 8.4 0 0 1-9.3 8.3A9 9 0 0 1 3 16l-1 4 4-1a8.7 8.7 0 0 0 4 1c4.7 0 8.5-3.7 8.5-8.4S15.7 3 11 3 3 6.8 3 11.5"/></svg>`,
+  back: () => `<svg viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><path d="M15 19l-7-7 7-7"/></svg>`,
+  send: () => `<svg viewBox="0 0 24 24" fill="#0095F6" stroke="#0095F6" stroke-width="1"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" fill="none" stroke="#0095F6" stroke-width="2"/></svg>`,
+};
+
+/* ---------------- Storage helpers (Firestore — real shared backend) ---------------- */
+async function storageGet(key, shared){
+  try{
+    const doc = await db.collection("appdata").doc(key).get();
+    if(!doc.exists) return null;
+    return doc.data().value;
+  }catch(e){ console.error("storage get failed", e); return null; }
+}
+async function storageSet(key, value, shared){
+  try{ await db.collection("appdata").doc(key).set({ value }); }catch(e){ console.error("storage set failed", e); }
+}
+
+async function loadUsers(){
+  const raw = await storageGet("users", true);
+  return raw ? JSON.parse(raw) : {};
+}
+async function saveUsers(users){
+  await storageSet("users", JSON.stringify(users), true);
+}
+function pushNotification(targetUsername, notif){
+  if(!targetUsername || targetUsername === ME.username) return;
+  if(!state.users[targetUsername]){
+    state.users[targetUsername] = { name: targetUsername, avatar: makeAvatar(targetUsername), bio: "", followers: [], following: [], notifications: [] };
+  }
+  if(!state.users[targetUsername].notifications) state.users[targetUsername].notifications = [];
+  state.users[targetUsername].notifications.unshift({ ...notif, time: Date.now() });
+  saveUsers(state.users);
+}
+function convKey(a, b){ return [a, b].sort().join("|"); }
+async function loadMessages(key){
+  const raw = await storageGet("dm:" + key, true);
+  return raw ? JSON.parse(raw) : [];
+}
+async function saveMessagesArr(key, arr){
+  await storageSet("dm:" + key, JSON.stringify(arr), true);
+}
+async function loadPosts(){
+  const raw = await storageGet("posts", true);
+  if(raw) return JSON.parse(raw);
+  return [];
+}
+async function savePosts(posts){
+  await storageSet("posts", JSON.stringify(posts), true);
+}
+
+/* ---------------- Current session (per browser, not persisted) ---------------- */
+let ME = null; // { username, name, avatar }
+let authMode = "login"; // login | signup
+let authError = "";
+let draftAuthUser = "", draftAuthPass = "", draftAuthName = "";
+let state = {
+  view: "loading", // loading | auth | feed | profile | create
+  stories: [],
+  posts: [],
+  users: {}, // username -> {name, avatar, bio, followers:[], following:[]}
+  profile: {
+    followers: "0", following: 0,
+    bio: "Building things on the internet 💻",
+  },
+};
+let viewingProfile = null; // username being viewed, or null for own profile
+let cameFromView = "feed";
+let searchQuery = "";
+let myStory = null; // { image, time }
+let showAddStory = false;
+let showViewStory = false;
+let draftStoryImage = null;
+let activeChatUser = null;
+let chatMessages = [];
+let chatDraft = "";
+let chatLoading = false;
+
+/* ---------------- Helpers ---------------- */
+function fmt(n){
+  if(n>=1000) return (n/1000).toFixed(n%1000===0?0:1)+"k";
+  return n;
+}
+function makeAvatar(name){
+  const colors = ["#F58529","#DD2A7B","#8134AF","#515BD4","#3897f0","#fa7e1e","#5851DB"];
+  let hash = 0;
+  for(let i=0;i<name.length;i++) hash = (hash*31 + name.charCodeAt(i)) >>> 0;
+  const color = colors[hash % colors.length];
+  const letter = (name[0] || "?").toUpperCase();
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='150' height='150' fill='${color}'/><text x='75' y='100' font-family='Arial, sans-serif' font-size='72' fill='white' text-anchor='middle'>${letter}</text></svg>`;
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
+}
+function brokenImgFallback(){
+  return `this.onerror=null;this.style.background='#e8e8e8';this.src='data:image/svg+xml;utf8,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='150' height='150'><rect width='150' height='150' fill='%23e8e8e8'/></svg>")}';`;
+}
+const FALLBACK_IMG = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"150\" height=\"150\"><rect width=\"150\" height=\"150\" fill=\"#e8e8e8\"/></svg>");
+function applyImageFallbacks(){
+  document.querySelectorAll("img").forEach(img => {
+    img.onerror = function(){
+      this.onerror = null;
+      this.style.background = "#e8e8e8";
+      this.src = FALLBACK_IMG;
+    };
+  });
+}
+function initCarousels(){
+  document.querySelectorAll("[data-carousel]").forEach(wrap => {
+    const track = wrap.querySelector(".carousel-track");
+    const counter = wrap.querySelector(".carousel-counter");
+    const dots = wrap.querySelectorAll(".carousel-dots .dot");
+    if(!track || dots.length === 0) return;
+    track.onscroll = () => {
+      const idx = Math.round(track.scrollLeft / track.clientWidth);
+      if(counter) counter.textContent = `${idx + 1}/${dots.length}`;
+      dots.forEach((d, i) => d.classList.toggle("active", i === idx));
+    };
+  });
+}
+function render(){
+  const app = document.getElementById("app");
+  const showNav = state.view !== "create" && state.view !== "auth" && state.view !== "loading";
+  app.innerHTML = topbarHTML() + bodyHTML() + (showNav ? bottomnavHTML() : "")
+    + (state.view==="create" ? createModalHTML() : "")
+    + (showEditProfile ? editProfileModalHTML() : "")
+    + (showAddStory ? addStoryModalHTML() : "")
+    + (showViewStory ? viewStoryHTML() : "");
+  attachEvents();
+  applyImageFallbacks();
+  initCarousels();
+}
+
+/* ---------------- Top bar ---------------- */
+function topbarHTML(){
+  if(state.view === "loading" || state.view === "auth") return "";
+  if(state.view === "search"){
+    return `<div class="topbar">
+      <button class="icon-btn" id="searchBackBtn">${ICONS.back()}</button>
+      <input type="text" id="searchInput" placeholder="Search" value="${searchQuery}"
+        style="flex:1;margin:0 12px;padding:8px 12px;border:none;border-radius:8px;background:#efefef;font-size:14px;font-family:inherit;outline:none;" />
+    </div>`;
+  }
+  if(state.view === "profile"){
+    const isMine = !viewingProfile || viewingProfile === ME.username;
+    return `<div class="topbar">
+      ${isMine ? "" : `<button class="icon-btn" id="profileBackBtn">${ICONS.back()}</button>`}
+      <span style="font-weight:600;font-size:18px;">${isMine ? ME.username : viewingProfile}</span>
+      <div class="topbar-icons">
+        ${isMine ? `<button class="icon-btn" id="profileMenuBtn">${ICONS.plusSquare()}</button>` : ""}
+      </div>
+    </div>`;
+  }
+  if(state.view === "notifications"){
+    return `<div class="topbar">
+      <button class="icon-btn" id="notifBackBtn">${ICONS.back()}</button>
+      <span style="font-weight:600;font-size:17px;">Notifications</span>
+      <div style="width:24px;"></div>
+    </div>`;
+  }
+  if(state.view === "dm"){
+    return `<div class="topbar">
+      <button class="icon-btn" id="dmBackBtn">${ICONS.back()}</button>
+      <span style="font-weight:600;font-size:17px;">${ME.username}</span>
+      <div style="width:24px;"></div>
+    </div>`;
+  }
+  if(state.view === "chat"){
+    const data = state.users[activeChatUser] || { avatar: makeAvatar(activeChatUser) };
+    return `<div class="topbar">
+      <button class="icon-btn" id="chatBackBtn">${ICONS.back()}</button>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;margin-left:8px;">
+        <img src="${data.avatar}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;" />
+        <span style="font-weight:600;font-size:15px;">${activeChatUser}</span>
+      </div>
+    </div>`;
+  }
+  const notifCount = (state.users[ME.username]?.notifications || []).length;
+  return `<div class="topbar">
+    <span class="logo">Interesting</span>
+    <div class="topbar-icons">
+      <button class="icon-btn" id="notifBtn" style="position:relative;">
+        ${ICONS.heart(false)}
+        ${notifCount > 0 ? `<span style="position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;">${notifCount > 9 ? "9+" : notifCount}</span>` : ""}
+      </button>
+      <button class="icon-btn" id="dmBtn">${ICONS.messenger()}</button>
+    </div>
+  </div>`;
+}
+
+/* ---------------- Body switch ---------------- */
+function bodyHTML(){
+  if(state.view === "loading") return `<div class="loading-screen"><div class="spinner"></div><div>Loading…</div></div>`;
+  if(state.view === "auth") return authScreenHTML();
+  if(state.view === "feed") return feedHTML();
+  if(state.view === "search") return searchHTML();
+  if(state.view === "notifications") return notificationsHTML();
+  if(state.view === "dm") return dmInboxHTML();
+  if(state.view === "chat") return chatHTML();
+  if(state.view === "profile") return profileHTML();
+  return feedHTML();
+}
+
+/* ---------------- DM ---------------- */
+function dmInboxHTML(){
+  const threads = (state.users[ME.username]?.dmThreads) || [];
+  if(threads.length === 0){
+    return `<div class="feed" style="padding-top:4px;"><div class="empty-feed-hint">No messages yet. Visit someone's profile and tap "Message" to start a chat.</div></div>`;
+  }
+  return `<div class="feed" style="padding-top:4px;">
+    ${threads.map(u => {
+      const data = state.users[u] || { avatar: makeAvatar(u) };
+      return `<div data-openchat="${u}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;">
+        <img src="${data.avatar}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;" />
+        <div>
+          <div style="font-weight:600;font-size:14px;">${u}</div>
+          <div style="font-size:12.5px;color:var(--muted);">Tap to open chat</div>
+        </div>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
+function chatHTML(){
+  if(chatLoading){
+    return `<div class="loading-screen" style="min-height:60vh;"><div class="spinner"></div><div>Loading…</div></div>`;
+  }
+  return `<div style="display:flex;flex-direction:column;height:calc(100vh - 56px - 60px);">
+    <div id="chatScroll" style="flex:1;overflow-y:auto;padding:12px;">
+      ${chatMessages.length === 0
+        ? `<div class="empty-feed-hint">Say hi to ${activeChatUser} 👋</div>`
+        : chatMessages.map(m => `
+          <div style="display:flex;justify-content:${m.from === ME.username ? 'flex-end' : 'flex-start'};margin-bottom:8px;">
+            <div style="max-width:70%;padding:8px 12px;border-radius:16px;font-size:13.5px;line-height:1.3;background:${m.from === ME.username ? 'var(--blue)' : '#efefef'};color:${m.from === ME.username ? '#fff' : '#000'};">
+              ${m.text}
+            </div>
+          </div>
+        `).join("")}
+    </div>
+    <div class="add-comment" style="border-top:1px solid var(--border);">
+      <input type="text" id="chatInput" placeholder="Message…" value="${chatDraft}" />
+      <button id="chatSendBtn" ${chatDraft.trim() ? "" : "disabled"}>${ICONS.send()}</button>
+    </div>
+  </div>`;
+}
+
+/* ---------------- Notifications ---------------- */
+function timeAgo(ts){
+  const diff = Math.max(0, Date.now() - ts);
+  const mins = Math.floor(diff / 60000);
+  if(mins < 1) return "now";
+  if(mins < 60) return mins + "m";
+  const hrs = Math.floor(mins / 60);
+  if(hrs < 24) return hrs + "h";
+  return Math.floor(hrs / 24) + "d";
+}
+function notifText(n){
+  if(n.type === "like") return "liked your photo.";
+  if(n.type === "comment") return `commented: "${(n.text||"").slice(0,40)}"`;
+  if(n.type === "follow") return "started following you.";
+  return "";
+}
+function notificationsHTML(){
+  const list = (state.users[ME.username]?.notifications) || [];
+  return `<div class="feed" style="padding-top:4px;">
+    ${list.length === 0
+      ? `<div class="empty-feed-hint">No notifications yet.</div>`
+      : list.map(n => {
+          const actor = state.users[n.from] || { avatar: makeAvatar(n.from || "?") };
+          return `<div data-viewprofile="${n.from}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;">
+            <img src="${actor.avatar}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;" />
+            <div style="flex:1;font-size:13.5px;line-height:1.35;">
+              <b>${n.from}</b> ${notifText(n)}
+              <span style="color:var(--muted);"> · ${timeAgo(n.time)}</span>
+            </div>
+            ${n.postImage ? `<img src="${n.postImage}" style="width:40px;height:40px;border-radius:4px;object-fit:cover;flex-shrink:0;" />` : ""}
+          </div>`;
+        }).join("")}
+  </div>`;
+}
+
+/* ---------------- Auth ---------------- */
+function authScreenHTML(){
+  return `<div class="auth-screen">
+    <div class="auth-logo">Interesting</div>
+    ${authError ? `<div class="auth-error">${authError}</div>` : ""}
+    ${authMode === "signup" ? `<input type="text" id="nameInput" placeholder="Full name" value="${draftAuthName}" />` : ""}
+    <input type="text" id="userInput" placeholder="Username" autocomplete="off" value="${draftAuthUser}" />
+    <input type="password" id="passInput" placeholder="Password" value="${draftAuthPass}" />
+    <button class="auth-btn" id="authSubmit">${authMode === "signup" ? "Sign up" : "Log in"}</button>
+    <div class="auth-switch">
+      ${authMode === "signup"
+        ? `Have an account? <b id="authSwitch">Log in</b>`
+        : `Don't have an account? <b id="authSwitch">Sign up</b>`}
+    </div>
+    <div class="auth-note">Demo app — passwords are stored in plain text in shared storage.<br/>Never use a real password here.</div>
+  </div>`;
+}
+
+/* ---------------- Search ---------------- */
+function searchHTML(){
+  const q = searchQuery.trim().toLowerCase();
+  const results = Object.keys(state.users)
+    .filter(u => u !== ME.username)
+    .filter(u => !q || u.includes(q) || (state.users[u].name||"").toLowerCase().includes(q))
+    .slice(0, 30);
+
+  if(!q){
+    // Explore: shuffled grid of all posts
+    const shuffled = [...state.posts].sort((a,b) => (a.id % 7) - (b.id % 7));
+    return `<div class="feed" style="padding-top:4px;">
+      ${shuffled.length === 0
+        ? `<div class="empty-feed-hint">No posts to explore yet.</div>`
+        : `<div class="grid">
+            ${shuffled.map(p => `<img src="${p.image}" data-explorepost="${p.id}" style="cursor:pointer;" />`).join("")}
+          </div>`}
+    </div>`;
+  }
+
+  return `<div class="feed" style="padding-top:4px;">
+    ${results.length === 0
+      ? `<div class="empty-feed-hint">No users found.</div>`
+      : results.map(u => {
+          const data = state.users[u];
+          return `<div data-viewprofile="${u}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;">
+            <img src="${data.avatar}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" />
+            <div>
+              <div style="font-weight:600;font-size:14px;">${u}</div>
+              <div style="font-size:12.5px;color:var(--muted);">${data.name || ""}</div>
+            </div>
+          </div>`;
+        }).join("")}
+  </div>`;
+}
+function storiesHTML(){
+  const hasStory = !!myStory;
+  const meStory = ME ? `
+    <div class="story you" style="position:relative;">
+      <div class="story-ring ${hasStory ? '' : 'seen'}" id="myStoryRing">
+        <img src="${hasStory ? myStory.image : ME.avatar}" />
+      </div>
+      <span class="plus-badge" id="addStoryBtn">+</span>
+      <span class="story-name">Your story</span>
+    </div>` : "";
+  return `<div class="stories">
+    ${meStory}
+    ${state.stories.map(s => `
+      <div class="story" data-story="${s.id}" style="position:relative;">
+        <div class="story-ring ${s.seen ? 'seen' : ''}">
+          <img src="${s.avatar}" />
+        </div>
+        <span class="story-name">${s.name}</span>
+      </div>
+    `).join("")}
+  </div>`;
+}
+
+/* ---------------- Feed ---------------- */
+function feedHTML(){
+  return `<div class="feed">
+    ${storiesHTML()}
+    ${state.posts.length
+      ? state.posts.map(postHTML).join("")
+      : `<div class="empty-feed-hint">No posts yet. Tap + below to share the first one, or search for people to follow.</div>`}
+  </div>`;
+}
+
+function postHTML(p){
+  const liked = ME && p.likedBy && p.likedBy.includes(ME.username);
+  const images = (p.images && p.images.length) ? p.images : [p.image];
+  const multi = images.length > 1;
+  return `<div class="post" data-post="${p.id}">
+    <div class="post-header">
+      <img class="avatar" src="${p.avatar}" />
+      <div>
+        <div class="uname" data-viewprofile="${p.user}" style="cursor:pointer;">${p.user}</div>
+        ${p.location ? `<div class="loc">${p.location}</div>` : ""}
+      </div>
+      <div class="spacer"></div>
+      <button class="icon-btn">⋯</button>
+    </div>
+    <div class="carousel-wrap" data-carousel="${p.id}" style="position:relative;">
+      <div class="carousel-track" data-doubletap="${p.id}">
+        ${images.map(img => `<img class="post-img carousel-img" src="${img}" />`).join("")}
+      </div>
+      ${multi ? `<span class="carousel-counter" data-counter="${p.id}">1/${images.length}</span>` : ""}
+      ${multi ? `<div class="carousel-dots">${images.map((_,i) => `<span class="dot ${i===0?'active':''}"></span>`).join("")}</div>` : ""}
+    </div>
+    <div class="post-actions">
+      <button class="icon-btn like-btn ${liked ? 'liked' : ''}" data-like="${p.id}">${ICONS.heart(liked)}</button>
+      <button class="icon-btn" data-focuscomment="${p.id}">${ICONS.comment()}</button>
+      <button class="icon-btn">${ICONS.share()}</button>
+      <button class="icon-btn right save-btn ${p.saved ? 'saved' : ''}" data-save="${p.id}">${ICONS.save(p.saved)}</button>
+    </div>
+    <div class="likes-count">${fmt(p.likes)} likes</div>
+    <div class="caption"><b>${p.user}</b>${p.caption}</div>
+    ${p.comments.length > 2 ? `<div class="view-comments" data-viewc="${p.id}">View all ${p.comments.length} comments</div>` : ""}
+    ${p.comments.slice(-2).map((c, idx) => {
+      const realIdx = p.comments.length - Math.min(2, p.comments.length) + idx;
+      const likedByMe = ME && (c.likes||[]).includes(ME.username);
+      const likeCount = (c.likes||[]).length;
+      const key = `${p.id}:${realIdx}`;
+      return `<div class="comment-row" style="display:flex;flex-direction:column;gap:1px;padding-bottom:4px;">
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <div style="flex:1;"><b>${c.user}</b> ${c.text}</div>
+          <button class="icon-btn comment-like-btn ${likedByMe ? 'liked' : ''}" data-commentlike="${key}">${ICONS.heart(likedByMe)}</button>
+        </div>
+        <div style="display:flex;gap:12px;font-size:11.5px;color:var(--muted);">
+          ${likeCount > 0 ? `<span>${likeCount} like${likeCount>1?'s':''}</span>` : ""}
+          <span data-replytoggle="${key}" style="cursor:pointer;font-weight:600;">Reply</span>
+        </div>
+        ${(c.replies||[]).map(r => `<div style="padding-left:18px;font-size:13px;"><b>${r.user}</b> ${r.text}</div>`).join("")}
+        <div data-replyrow="${key}" style="display:none;padding-left:18px;margin-top:3px;">
+          <input type="text" placeholder="Reply to ${c.user}…" data-replyinput="${key}"
+            style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:13px;padding:4px 0;outline:none;font-family:inherit;background:transparent;" />
+        </div>
+      </div>`;
+    }).join("")}
+    <div class="timestamp">${p.time}</div>
+    <div class="add-comment">
+      <input type="text" placeholder="Add a comment…" data-commentinput="${p.id}" />
+      <button data-postcomment="${p.id}" disabled>Post</button>
+    </div>
+  </div>`;
+}
+
+/* ---------------- Profile ---------------- */
+function profileHTML(){
+  const username = viewingProfile || ME.username;
+  const isMine = username === ME.username;
+  const userData = isMine
+    ? { name: ME.name, avatar: ME.avatar, bio: state.profile.bio, followers: state.users[ME.username]?.followers || [], following: state.users[ME.username]?.following || [] }
+    : (state.users[username] || { name: username, avatar: makeAvatar(username), bio: "", followers: [], following: [] });
+  const mine = state.posts.filter(p => p.user === username);
+  const amFollowing = !isMine && (state.users[ME.username]?.following || []).includes(username);
+
+  return `<div class="profile">
+    <div class="profile-top">
+      <img src="${userData.avatar}" />
+      <div class="stats">
+        <div class="stat"><b>${mine.length}</b><span>Posts</span></div>
+        <div class="stat"><b>${(userData.followers||[]).length}</b><span>Followers</span></div>
+        <div class="stat"><b>${(userData.following||[]).length}</b><span>Following</span></div>
+      </div>
+    </div>
+    <div class="profile-info">
+      <div class="name">${userData.name || username}</div>
+      <div class="bio">${userData.bio || ""}</div>
+    </div>
+    <div class="profile-buttons">
+      ${isMine
+        ? `<button id="editProfileBtn">Edit profile</button><button id="logoutBtn">Log out</button>`
+        : `<button id="followBtn" data-target="${username}" style="${amFollowing ? '' : 'background:var(--blue);color:#fff;border-color:var(--blue);'}">${amFollowing ? "Following" : "Follow"}</button><button id="messageBtn" data-target="${username}">Message</button>`}
+    </div>
+    <div class="tabs">
+      <div class="tab active">${ICONS.grid()}</div>
+      <div class="tab">${ICONS.reels()}</div>
+    </div>
+    <div class="grid">
+      ${mine.length ? mine.map(p => `<img src="${p.image}" />`).join("") : `<div class="empty-feed-hint" style="grid-column:1/-1;">No posts yet${isMine ? " — tap + to share your first one." : "."}</div>`}
+    </div>
+  </div>`;
+}
+function myPosts(){ return state.posts.filter(p => p.user === ME.username); }
+
+/* ---------------- Bottom nav ---------------- */
+function bottomnavHTML(){
+  const v = state.view;
+  return `<div class="bottomnav">
+    <button class="navbtn ${v==='feed'?'active':''}" data-nav="feed">${v==='feed' ? ICONS.homeFilled() : ICONS.homeOutline()}</button>
+    <button class="navbtn" data-nav="search">${ICONS.search()}</button>
+    <button class="navbtn" data-nav="create">${ICONS.plusSquare()}</button>
+    <button class="navbtn" data-nav="reels">${ICONS.reels()}</button>
+    <button class="navbtn ${v==='profile'?'active':''}" data-nav="profile"><img class="profile-pic" src="${ME.avatar}" /></button>
+  </div>`;
+}
+
+function urlPasteHTML(inputId, btnId){
+  return `<div style="display:flex;gap:6px;padding:0 14px 10px;">
+    <input type="text" id="${inputId}" placeholder="Or paste image link (https://...)" style="flex:1;padding:7px 9px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;font-family:inherit;outline:none;" />
+    <button id="${btnId}" style="padding:7px 12px;border:none;border-radius:6px;background:#efefef;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;">Use link</button>
+  </div>`;
+}
+
+/* ---------------- Edit Profile modal ---------------- */
+let showEditProfile = false;
+let draftName = "", draftBio = "", draftAvatar = "";
+function editProfileModalHTML(){
+  return `<div class="modal-overlay" id="editOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <button id="closeEditModal">✕</button>
+        <span>Edit profile</span>
+        <button class="modal-share" id="saveProfileBtn" ${draftName.trim() ? "" : "disabled"}>Save</button>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 14px 6px;">
+        <img src="${draftAvatar}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;" />
+        <button id="changePhotoBtn" style="background:none;border:none;color:var(--blue);font-weight:600;font-size:13.5px;cursor:pointer;">Choose from gallery</button>
+      </div>
+      ${urlPasteHTML("avatarUrlInput", "avatarUrlBtn")}
+      <div class="modal-caption" style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Name</div>
+          <input type="text" id="editNameInput" value="${draftName}" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;outline:none;" />
+        </div>
+        <div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Bio</div>
+          <textarea id="editBioInput" placeholder="Write a bio…" style="width:100%;min-height:70px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;outline:none;resize:none;">${draftBio}</textarea>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- Create modal ---------------- */
+let draftImages = [];
+let draftCaption = "";
+let fileInputMode = "post"; // post | avatar | story
+function createModalHTML(){
+  return `<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <button id="closeModal">✕</button>
+        <span>New post</span>
+        <button class="modal-share" id="shareBtn" ${draftImages.length ? "" : "disabled"}>Share</button>
+      </div>
+      ${draftImages.length === 0 ? `
+        <div class="upload-area" id="uploadArea">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#8e8e8e" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5-5 5-3-3-5 5"/></svg>
+          <span style="font-size:13px;">Tap to select photo(s)</span>
+        </div>
+      ` : `
+        <div style="display:flex;gap:6px;overflow-x:auto;padding:10px 10px 4px;">
+          ${draftImages.map((img, i) => `
+            <div style="position:relative;flex:0 0 76px;">
+              <img src="${img}" style="width:76px;height:76px;border-radius:6px;object-fit:cover;display:block;" />
+              <button data-removeimg="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;font-size:12px;cursor:pointer;">✕</button>
+            </div>
+          `).join("")}
+          <div id="addMoreImg" style="flex:0 0 76px;height:76px;border-radius:6px;background:#fafafa;border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--muted);cursor:pointer;">+</div>
+        </div>
+      `}
+      ${urlPasteHTML("postUrlInput", "postUrlBtn")}
+      <div class="modal-caption">
+        <textarea id="captionInput" placeholder="Write a caption…">${draftCaption}</textarea>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- Add Story modal ---------------- */
+function addStoryModalHTML(){
+  return `<div class="modal-overlay" id="storyModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <button id="closeStoryModal">✕</button>
+        <span>Add to story</span>
+        <button class="modal-share" id="postStoryBtn" ${draftStoryImage ? "" : "disabled"}>Share</button>
+      </div>
+      <div class="upload-area" id="storyUploadArea">
+        ${draftStoryImage ? `<img src="${draftStoryImage}" />` : `
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#8e8e8e" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5-5 5-3-3-5 5"/></svg>
+          <span style="font-size:13px;">Tap to select a photo</span>
+        `}
+      </div>
+      ${urlPasteHTML("storyUrlInput", "storyUrlBtn")}
+    </div>
+  </div>`;
+}
+
+/* ---------------- Story viewer ---------------- */
+function viewStoryHTML(){
+  return `<div class="modal-overlay" id="storyViewOverlay" style="background:#000;">
+    <div style="position:relative; width:100%; max-width:430px; height:100vh; display:flex; align-items:center; justify-content:center;">
+      <img src="${myStory ? myStory.image : ''}" style="width:100%; max-height:100vh; object-fit:contain;" />
+      <button id="closeStoryView" style="position:absolute; top:16px; right:16px; background:rgba(0,0,0,0.4); border:none; color:#fff; font-size:20px; width:34px;height:34px;border-radius:50%; cursor:pointer;">✕</button>
+      <div style="position:absolute; top:16px; left:16px; display:flex; align-items:center; gap:8px;">
+        <img src="${ME.avatar}" style="width:30px;height:30px;border-radius:50%;border:1.5px solid #fff;" />
+        <span style="color:#fff;font-weight:600;font-size:13px;">${ME.username}</span>
+      </div>
+      <button id="removeStoryBtn" style="position:absolute; bottom:24px; background:rgba(255,255,255,0.15); color:#fff; border:1px solid rgba(255,255,255,0.4); border-radius:8px; padding:8px 16px; font-size:13px; cursor:pointer;">Remove story</button>
+    </div>
+  </div>`;
+}
+
+/* ---------------- Events ---------------- */
+function attachEvents(){
+  document.querySelectorAll("[data-nav]").forEach(btn => {
+    btn.onclick = () => {
+      const target = btn.dataset.nav;
+      if(target === "reels"){ return; } // not implemented in this demo
+      if(target === "create"){ draftImages = []; draftCaption = ""; state.view = "create"; }
+      else { viewingProfile = null; state.view = target; }
+      render();
+    };
+  });
+
+  // Search
+  const searchInput = document.getElementById("searchInput");
+  if(searchInput){
+    searchInput.oninput = (e) => {
+      searchQuery = e.target.value;
+      render();
+      const el = document.getElementById("searchInput");
+      if(el){ el.focus(); el.selectionStart = el.selectionEnd = el.value.length; }
+    };
+  }
+  const searchBackBtn = document.getElementById("searchBackBtn");
+  if(searchBackBtn){ searchBackBtn.onclick = () => { state.view = "feed"; render(); }; }
+  const profileBackBtn = document.getElementById("profileBackBtn");
+  if(profileBackBtn){ profileBackBtn.onclick = () => { viewingProfile = null; state.view = cameFromView; render(); }; }
+
+  document.querySelectorAll("[data-viewprofile]").forEach(el => {
+    el.onclick = () => {
+      const u = el.dataset.viewprofile;
+      if(u === ME.username) return;
+      cameFromView = state.view;
+      viewingProfile = u;
+      state.view = "profile";
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-explorepost]").forEach(el => {
+    el.onclick = () => {
+      const id = Number(el.dataset.explorepost);
+      const p = state.posts.find(x => x.id === id);
+      if(!p) return;
+      cameFromView = state.view;
+      viewingProfile = p.user === ME.username ? null : p.user;
+      state.view = "profile";
+      render();
+    };
+  });
+
+  const followBtn = document.getElementById("followBtn");
+  if(followBtn){
+    followBtn.onclick = async () => {
+      const target = followBtn.dataset.target;
+      if(!state.users[ME.username]) state.users[ME.username] = { name: ME.name, avatar: ME.avatar, bio: state.profile.bio, followers: [], following: [] };
+      if(!state.users[target]) state.users[target] = { name: target, avatar: makeAvatar(target), bio: "", followers: [], following: [] };
+      const me = state.users[ME.username];
+      const them = state.users[target];
+      const idx = (me.following || []).indexOf(target);
+      if(idx === -1){
+        me.following = [...(me.following||[]), target];
+        them.followers = [...(them.followers||[]), ME.username];
+        pushNotification(target, { type: "follow", from: ME.username });
+      } else {
+        me.following.splice(idx, 1);
+        them.followers = (them.followers||[]).filter(u => u !== ME.username);
+      }
+      render();
+      await saveUsers(state.users);
+    };
+  }
+
+  const notifBtn = document.getElementById("notifBtn");
+  if(notifBtn){
+    notifBtn.onclick = () => { cameFromView = state.view; state.view = "notifications"; render(); };
+  }
+  const notifBackBtn = document.getElementById("notifBackBtn");
+  if(notifBackBtn){
+    notifBackBtn.onclick = () => { state.view = cameFromView; render(); };
+  }
+
+  const dmBtn = document.getElementById("dmBtn");
+  if(dmBtn){
+    dmBtn.onclick = () => { cameFromView = state.view; state.view = "dm"; render(); };
+  }
+  const dmBackBtn = document.getElementById("dmBackBtn");
+  if(dmBackBtn){
+    dmBackBtn.onclick = () => { state.view = cameFromView; render(); };
+  }
+
+  const messageBtn = document.getElementById("messageBtn");
+  if(messageBtn){
+    messageBtn.onclick = () => openChat(messageBtn.dataset.target);
+  }
+
+  document.querySelectorAll("[data-openchat]").forEach(el => {
+    el.onclick = () => openChat(el.dataset.openchat);
+  });
+
+  const chatBackBtn = document.getElementById("chatBackBtn");
+  if(chatBackBtn){
+    chatBackBtn.onclick = () => { state.view = "dm"; activeChatUser = null; render(); };
+  }
+
+  const chatInput = document.getElementById("chatInput");
+  if(chatInput){
+    chatInput.oninput = (e) => {
+      chatDraft = e.target.value;
+      document.getElementById("chatSendBtn").disabled = !chatDraft.trim();
+    };
+    chatInput.onkeydown = (e) => { if(e.key === "Enter" && chatDraft.trim()) sendChatMessage(); };
+  }
+  const chatSendBtn = document.getElementById("chatSendBtn");
+  if(chatSendBtn){
+    chatSendBtn.onclick = sendChatMessage;
+  }
+  const chatScroll = document.getElementById("chatScroll");
+  if(chatScroll){ chatScroll.scrollTop = chatScroll.scrollHeight; }
+
+  document.querySelectorAll("[data-like]").forEach(btn => {
+    btn.onclick = () => {
+      const id = Number(btn.dataset.like);
+      const p = state.posts.find(x => x.id === id);
+      if(!p.likedBy) p.likedBy = [];
+      const i = p.likedBy.indexOf(ME.username);
+      if(i === -1){
+        p.likedBy.push(ME.username); p.likes += 1;
+        pushNotification(p.user, { type: "like", from: ME.username, postImage: p.image });
+      }
+      else { p.likedBy.splice(i,1); p.likes -= 1; }
+      render();
+      savePosts(state.posts);
+    };
+  });
+
+  document.querySelectorAll("[data-doubletap]").forEach(img => {
+    let lastTap = 0;
+    img.onclick = () => {
+      const now = Date.now();
+      if(now - lastTap < 350){
+        const id = Number(img.dataset.doubletap);
+        const p = state.posts.find(x => x.id === id);
+        if(!p.likedBy) p.likedBy = [];
+        if(!p.likedBy.includes(ME.username)){
+          p.likedBy.push(ME.username); p.likes += 1;
+          pushNotification(p.user, { type: "like", from: ME.username, postImage: p.image });
+          render();
+          savePosts(state.posts);
+        }
+      }
+      lastTap = now;
+    };
+  });
+
+  document.querySelectorAll("[data-save]").forEach(btn => {
+    btn.onclick = () => {
+      const id = Number(btn.dataset.save);
+      const p = state.posts.find(x => x.id === id);
+      p.saved = !p.saved;
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-commentinput]").forEach(input => {
+    const id = Number(input.dataset.commentinput);
+    const btn = document.querySelector(`[data-postcomment="${id}"]`);
+    input.oninput = () => { btn.disabled = input.value.trim().length === 0; };
+    input.onkeydown = (e) => { if(e.key === "Enter" && input.value.trim()) submitComment(id, input.value.trim()); };
+  });
+
+  document.querySelectorAll("[data-postcomment]").forEach(btn => {
+    btn.onclick = () => {
+      const id = Number(btn.dataset.postcomment);
+      const input = document.querySelector(`[data-commentinput="${id}"]`);
+      if(input.value.trim()) submitComment(id, input.value.trim());
+    };
+  });
+
+  document.querySelectorAll("[data-focuscomment]").forEach(btn => {
+    btn.onclick = () => {
+      const id = btn.dataset.focuscomment;
+      document.querySelector(`[data-commentinput="${id}"]`).focus();
+    };
+  });
+
+  document.querySelectorAll("[data-commentlike]").forEach(btn => {
+    btn.onclick = () => {
+      const [postId, idx] = btn.dataset.commentlike.split(":").map(Number);
+      const p = state.posts.find(x => x.id === postId);
+      if(!p) return;
+      const c = p.comments[idx];
+      if(!c.likes) c.likes = [];
+      const i = c.likes.indexOf(ME.username);
+      if(i === -1) c.likes.push(ME.username); else c.likes.splice(i, 1);
+      render();
+      savePosts(state.posts);
+    };
+  });
+
+  document.querySelectorAll("[data-replytoggle]").forEach(el => {
+    el.onclick = () => {
+      const row = document.querySelector(`[data-replyrow="${el.dataset.replytoggle}"]`);
+      if(!row) return;
+      const showing = row.style.display === "block";
+      row.style.display = showing ? "none" : "block";
+      if(!showing){
+        const input = row.querySelector("input");
+        if(input) input.focus();
+      }
+    };
+  });
+
+  document.querySelectorAll("[data-replyinput]").forEach(input => {
+    input.onkeydown = (e) => {
+      if(e.key === "Enter" && input.value.trim()){
+        submitReply(input.dataset.replyinput, input.value.trim());
+      }
+    };
+  });
+
+  // Create modal
+  const overlay = document.getElementById("modalOverlay");
+  if(overlay){
+    document.getElementById("closeModal").onclick = () => { state.view = "feed"; render(); };
+    const uploadArea = document.getElementById("uploadArea");
+    if(uploadArea){
+      uploadArea.onclick = () => {
+        fileInputMode = "post";
+        const fi = document.getElementById("fileInput");
+        fi.setAttribute("multiple", "multiple");
+        fi.click();
+      };
+    }
+    const addMoreImg = document.getElementById("addMoreImg");
+    if(addMoreImg){
+      addMoreImg.onclick = () => {
+        fileInputMode = "post";
+        const fi = document.getElementById("fileInput");
+        fi.setAttribute("multiple", "multiple");
+        fi.click();
+      };
+    }
+    document.querySelectorAll("[data-removeimg]").forEach(btn => {
+      btn.onclick = () => { draftImages.splice(Number(btn.dataset.removeimg), 1); render(); };
+    });
+    document.getElementById("captionInput").oninput = (e) => { draftCaption = e.target.value; };
+    document.getElementById("postUrlBtn").onclick = () => {
+      const url = document.getElementById("postUrlInput").value.trim();
+      if(url){ draftImages.push(url); document.getElementById("postUrlInput").value = ""; render(); }
+    };
+    document.getElementById("shareBtn").onclick = () => {
+      if(!draftImages.length) return;
+      const newPost = {
+        id: Date.now(), user: ME.username, avatar: ME.avatar, location: "",
+        image: draftImages[0], images: [...draftImages], caption: draftCaption || "", likes: 0, likedBy: [], saved: false,
+        comments: [], time: "JUST NOW",
+      };
+      state.posts.unshift(newPost);
+      state.view = "feed";
+      draftImages = []; draftCaption = "";
+      render();
+      savePosts(state.posts);
+    };
+  }
+
+  // Edit profile
+  const editBtn = document.getElementById("editProfileBtn");
+  if(editBtn){
+    editBtn.onclick = () => {
+      draftName = ME.name; draftBio = state.profile.bio; draftAvatar = ME.avatar;
+      showEditProfile = true; render();
+    };
+  }
+  const editOverlay = document.getElementById("editOverlay");
+  if(editOverlay){
+    document.getElementById("closeEditModal").onclick = () => { showEditProfile = false; render(); };
+    document.getElementById("changePhotoBtn").onclick = () => { fileInputMode = "avatar"; document.getElementById("fileInput").click(); };
+    document.getElementById("avatarUrlBtn").onclick = () => {
+      const url = document.getElementById("avatarUrlInput").value.trim();
+      if(url){ draftAvatar = url; render(); }
+    };
+    document.getElementById("editNameInput").oninput = (e) => {
+      draftName = e.target.value;
+      document.getElementById("saveProfileBtn").disabled = !draftName.trim();
+    };
+    document.getElementById("editBioInput").oninput = (e) => { draftBio = e.target.value; };
+    document.getElementById("saveProfileBtn").onclick = saveProfileChanges;
+  }
+
+  // Add story
+  const addStoryBtn = document.getElementById("addStoryBtn");
+  if(addStoryBtn){
+    addStoryBtn.onclick = (e) => {
+      e.stopPropagation();
+      draftStoryImage = null;
+      showAddStory = true;
+      render();
+    };
+  }
+  const myStoryRing = document.getElementById("myStoryRing");
+  if(myStoryRing && myStory){
+    myStoryRing.style.cursor = "pointer";
+    myStoryRing.onclick = () => { showViewStory = true; render(); };
+  }
+  const storyModalOverlay = document.getElementById("storyModalOverlay");
+  if(storyModalOverlay){
+    document.getElementById("closeStoryModal").onclick = () => { showAddStory = false; render(); };
+    document.getElementById("storyUploadArea").onclick = () => { fileInputMode = "story"; document.getElementById("fileInput").click(); };
+    document.getElementById("storyUrlBtn").onclick = () => {
+      const url = document.getElementById("storyUrlInput").value.trim();
+      if(url){ draftStoryImage = url; render(); }
+    };
+    document.getElementById("postStoryBtn").onclick = () => {
+      if(!draftStoryImage) return;
+      myStory = { image: draftStoryImage, time: Date.now() };
+      showAddStory = false;
+      draftStoryImage = null;
+      render();
+    };
+  }
+  const storyViewOverlay = document.getElementById("storyViewOverlay");
+  if(storyViewOverlay){
+    document.getElementById("closeStoryView").onclick = () => { showViewStory = false; render(); };
+    document.getElementById("removeStoryBtn").onclick = () => { myStory = null; showViewStory = false; render(); };
+  }
+
+  // Auth screen
+  const authSubmit = document.getElementById("authSubmit");
+  if(authSubmit){
+    const userEl = document.getElementById("userInput");
+    const passEl = document.getElementById("passInput");
+    const nameEl = document.getElementById("nameInput");
+    userEl.oninput = (e) => { draftAuthUser = e.target.value; };
+    passEl.oninput = (e) => { draftAuthPass = e.target.value; };
+    if(nameEl) nameEl.oninput = (e) => { draftAuthName = e.target.value; };
+    authSubmit.onclick = handleAuthSubmit;
+    passEl.onkeydown = (e) => { if(e.key === "Enter"){ e.preventDefault(); handleAuthSubmit(); } };
+  }
+  const authSwitch = document.getElementById("authSwitch");
+  if(authSwitch){
+    authSwitch.onclick = () => { authMode = authMode === "signup" ? "login" : "signup"; authError = ""; render(); };
+  }
+
+  const logoutBtn = document.getElementById("logoutBtn");
+  if(logoutBtn){
+    logoutBtn.onclick = () => { ME = null; authMode = "login"; authError = ""; state.view = "auth"; render(); };
+  }
+}
+
+async function saveProfileChanges(){
+  if(!draftName.trim()) return;
+  ME.name = draftName.trim();
+  ME.avatar = draftAvatar;
+  state.profile.bio = draftBio;
+
+  const users = await loadUsers();
+  if(users[ME.username]){
+    users[ME.username].name = ME.name;
+    users[ME.username].avatar = ME.avatar;
+    users[ME.username].bio = draftBio;
+    await saveUsers(users);
+  }
+
+  state.posts.forEach(p => { if(p.user === ME.username) p.avatar = ME.avatar; });
+  await savePosts(state.posts);
+
+  showEditProfile = false;
+  state.view = "profile";
+  render();
+}
+
+async function handleAuthSubmit(){
+  const username = draftAuthUser.trim().toLowerCase();
+  const password = draftAuthPass;
+  const name = draftAuthName.trim();
+
+  if(!username || !password){ authError = "Please fill in username and password."; render(); return; }
+
+  const users = await loadUsers();
+
+  if(authMode === "signup"){
+    if(users[username]){ authError = "That username is already taken."; render(); return; }
+    if(!name){ authError = "Please enter your full name."; render(); return; }
+    users[username] = { password, name, avatar: makeAvatar(username), bio: "", followers: [], following: [] };
+    await saveUsers(users);
+    ME = { username, name, avatar: users[username].avatar };
+    state.profile.bio = "";
+  } else {
+    const u = users[username];
+    if(!u || u.password !== password){ authError = "Incorrect username or password."; render(); return; }
+    if(!u.followers) u.followers = [];
+    if(!u.following) u.following = [];
+    ME = { username, name: u.name, avatar: u.avatar };
+    state.profile.bio = u.bio || "";
+  }
+
+  state.users = users;
+  authError = "";
+  draftAuthUser = ""; draftAuthPass = ""; draftAuthName = "";
+  state.view = "loading";
+  render();
+  state.posts = await loadPosts();
+  state.view = "feed";
+  render();
+}
+
+function readFileAsDataURL(file){
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+}
+document.getElementById("fileInput").addEventListener("change", async (e) => {
+  const files = Array.from(e.target.files || []);
+  if(!files.length) return;
+
+  if(fileInputMode === "avatar"){
+    draftAvatar = await readFileAsDataURL(files[0]);
+  } else if(fileInputMode === "story"){
+    draftStoryImage = await readFileAsDataURL(files[0]);
+  } else {
+    const results = await Promise.all(files.map(readFileAsDataURL));
+    draftImages.push(...results);
+  }
+  render();
+  e.target.value = "";
+  e.target.removeAttribute("multiple");
+});
+
+function submitComment(id, text){
+  const p = state.posts.find(x => x.id === id);
+  p.comments.push({ user: ME.username, text, likes: [], replies: [] });
+  pushNotification(p.user, { type: "comment", from: ME.username, text, postImage: p.image });
+  render();
+  savePosts(state.posts);
+}
+
+function submitReply(key, text){
+  const [postId, idx] = key.split(":").map(Number);
+  const p = state.posts.find(x => x.id === postId);
+  if(!p) return;
+  const c = p.comments[idx];
+  if(!c.replies) c.replies = [];
+  c.replies.push({ user: ME.username, text });
+  pushNotification(c.user, { type: "comment", from: ME.username, text, postImage: p.image });
+  render();
+  savePosts(state.posts);
+}
+
+async function openChat(username){
+  if(!username || username === ME.username) return;
+  activeChatUser = username;
+  chatDraft = "";
+  chatLoading = true;
+  cameFromView = state.view;
+  state.view = "chat";
+  render();
+  chatMessages = await loadMessages(convKey(ME.username, username));
+  chatLoading = false;
+  render();
+}
+
+async function sendChatMessage(){
+  const text = chatDraft.trim();
+  if(!text || !activeChatUser) return;
+  chatMessages.push({ from: ME.username, text, time: Date.now() });
+  chatDraft = "";
+  render();
+
+  const key = convKey(ME.username, activeChatUser);
+  await saveMessagesArr(key, chatMessages);
+
+  if(!state.users[ME.username]) state.users[ME.username] = { name: ME.name, avatar: ME.avatar, bio: state.profile.bio, followers: [], following: [], dmThreads: [] };
+  if(!state.users[activeChatUser]) state.users[activeChatUser] = { name: activeChatUser, avatar: makeAvatar(activeChatUser), bio: "", followers: [], following: [], dmThreads: [] };
+  if(!state.users[ME.username].dmThreads) state.users[ME.username].dmThreads = [];
+  if(!state.users[activeChatUser].dmThreads) state.users[activeChatUser].dmThreads = [];
+  if(!state.users[ME.username].dmThreads.includes(activeChatUser)) state.users[ME.username].dmThreads.unshift(activeChatUser);
+  if(!state.users[activeChatUser].dmThreads.includes(ME.username)) state.users[activeChatUser].dmThreads.unshift(ME.username);
+  await saveUsers(state.users);
+}
+
+state.view = "auth";
+render();
+</script>
+<script>
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("service-worker.js").catch(e => console.log("SW registration failed", e));
+    });
+  }
+</script>
+</body>
+</html>
