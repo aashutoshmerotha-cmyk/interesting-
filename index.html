@@ -21,15 +21,21 @@
 <script>
   // ⚠️ PASTE YOUR OWN FIREBASE CONFIG HERE (see SETUP.md for how to get it)
   const firebaseConfig = {
-    apiKey: "AIzaSyBqFZgqhinm2smM0VFOAn9REJ0z61GD94s",
-    authDomain: "interesting-84fa7.firebaseapp.com",
-    projectId: "interesting-84fa7",
-    storageBucket: "interesting-84fa7.firebasestorage.app",
-    messagingSenderId: "498101977169",
-    appId: "1:498101977169:web:7e523cbc6fbc07911f3870",
+    apiKey: "AIzaSyDgPuAhQVjxmZugk_ZK1dDg9mbvtTg0oW0",
+    authDomain: "interesting-45209.firebaseapp.com",
+    projectId: "interesting-45209",
+    storageBucket: "interesting-45209.firebasestorage.app",
+    messagingSenderId: "568869177863",
+    appId: "1:568869177863:web:c68f360971d1a10e9138a2",
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
+  db.collection("appdata").doc("__healthcheck__").set({ ts: Date.now() })
+    .then(() => console.log("Firestore write OK"))
+    .catch((e) => {
+      console.error("Firestore connection failed on startup:", e);
+      window.__firestoreStartupError = e;
+    });
 </script>
 
 <style>
@@ -269,7 +275,13 @@
   }
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
-  @media (prefers-reduced-motion: reduce){ * { transition:none !important; } }
+  @media (prefers-reduced-motion: reduce){ * { transition:none !important; } }  .save-toast{
+    position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+    background:#262626; color:#fff; padding:10px 18px; border-radius:20px;
+    font-size:13px; z-index:999; max-width:90%; text-align:center;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+  }
+  .save-toast.error{ background:#ED4956; }
 </style>
 </head>
 <body>
@@ -298,15 +310,39 @@ const ICONS = {
 };
 
 /* ---------------- Storage helpers (Firestore — real shared backend) ---------------- */
+function showSaveToast(msg, isError){
+  let el = document.getElementById("saveToast");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "saveToast";
+    el.className = "save-toast";
+    document.body.appendChild(el);
+  }
+  el.className = "save-toast" + (isError ? " error" : "");
+  el.textContent = msg;
+  el.style.display = "block";
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => { el.style.display = "none"; }, isError ? 6000 : 1500);
+}
+
 async function storageGet(key, shared){
   try{
     const doc = await db.collection("appdata").doc(key).get();
     if(!doc.exists) return null;
     return doc.data().value;
-  }catch(e){ console.error("storage get failed", e); return null; }
+  }catch(e){
+    console.error("storage get failed", e);
+    showSaveToast("Couldn't load data: " + (e.code || e.message || "unknown error"), true);
+    return null;
+  }
 }
 async function storageSet(key, value, shared){
-  try{ await db.collection("appdata").doc(key).set({ value }); }catch(e){ console.error("storage set failed", e); }
+  try{
+    await db.collection("appdata").doc(key).set({ value });
+  }catch(e){
+    console.error("storage set failed", e);
+    showSaveToast("Couldn't save: " + (e.code || e.message || "unknown error"), true);
+  }
 }
 
 async function loadUsers(){
@@ -1358,6 +1394,12 @@ async function sendChatMessage(){
 
 state.view = "auth";
 render();
+setTimeout(() => {
+  if(window.__firestoreStartupError){
+    const e = window.__firestoreStartupError;
+    showSaveToast("Firestore not reachable: " + (e.code || e.message || "unknown error"), true);
+  }
+}, 1200);
 </script>
 <script>
   if("serviceWorker" in navigator){
